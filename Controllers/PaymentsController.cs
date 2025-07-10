@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
 using delice_api.DTOs;
 using delice_api.Entities;
 using delice_api.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace delice_api.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class PaymentController : ControllerBase
     {
         private readonly PaymentService _paymentService;

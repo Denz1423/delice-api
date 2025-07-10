@@ -1,14 +1,14 @@
 using Amazon.DynamoDBv2.Model;
-using Microsoft.AspNetCore.Mvc;
 using delice_api.DTOs;
 using delice_api.Entities;
 using delice_api.Entities.Order;
 using delice_api.Services;
+using Microsoft.AspNetCore.Mvc;
 
-namespace server.Controllers
+namespace delice_api.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
         private readonly DynamoDB _dynamoDB;
@@ -127,7 +127,7 @@ namespace server.Controllers
                                         "Price",
                                         new AttributeValue { N = p.Price.ToString() }
                                     },
-                                     {
+                                    {
                                         "Type",
                                         new AttributeValue { S = p.Type.ToString() }
                                     },

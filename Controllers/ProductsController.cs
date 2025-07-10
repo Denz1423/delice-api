@@ -1,12 +1,12 @@
 using Amazon.DynamoDBv2.Model;
-using Microsoft.AspNetCore.Mvc;
 using delice_api.Entities;
 using delice_api.Services;
+using Microsoft.AspNetCore.Mvc;
 
-namespace server.Controllers
+namespace delice_api.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
         private readonly DynamoDB _dynamoDB;

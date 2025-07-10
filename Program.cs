@@ -36,9 +36,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// app.UseCors(opt =>
+// {
+//     opt.AllowAnyHeader()
+//         .AllowAnyMethod()
+//         .AllowCredentials()
+//         .WithOrigins("https://*.davisdjaja.com", "http://*.davisdjaja.com")
+//         .SetIsOriginAllowedToAllowWildcardSubdomains();
+// });
+
 app.UseCors(opt =>
 {
-    opt.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins("http://localhost:5173").SetIsOriginAllowedToAllowWildcardSubdomains();
+    opt.AllowAnyMethod()
+        .AllowAnyHeader()
+        .SetIsOriginAllowed(origin => true) // allow any origin
+        .AllowCredentials();
 });
 
 app.UseAuthorization();
