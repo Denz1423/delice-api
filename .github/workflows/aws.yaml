@@ -20,7 +20,7 @@ jobs:
           dotnet-version: 8.0.315
 
       - name: Publish
-        run: run: dotnet publish -c Release -o ./publish
+        run: dotnet publish -c Release -o ./publish
 
   deploy:
     needs: build
