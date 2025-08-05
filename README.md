@@ -1,4 +1,5 @@
-> [!IMPORTANT] > **Disclaimer**: This project uses Stripe for payment processing. Please do not enter real credit card information. Instead, use Stripe’s test cards for payment processing, which can be found at <a href="https://docs.stripe.com/testing">Stripe Testing Documentation</a>.
+> [!IMPORTANT] 
+**Disclaimer**: This project uses Stripe for payment processing. Please do not enter real credit card information. Instead, use Stripe’s test cards for payment processing, which can be found at <a href="https://docs.stripe.com/testing">Stripe Testing Documentation</a>.
 
 <div align="center">
 <img alt="Delice" src="images/Delice-circle.png">
