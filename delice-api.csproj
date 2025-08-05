@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.0-preview" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.3.2" />
     <PackageReference Include="Stripe.net" Version="45.8.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
