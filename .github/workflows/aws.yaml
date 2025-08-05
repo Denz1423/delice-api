@@ -1,4 +1,4 @@
-name: CI/CD: Deploy .NET App to EC2 via S3 + CodeDeploy
+name: CI/CD using S3 CodeDeploy
 
 on:
   push:
