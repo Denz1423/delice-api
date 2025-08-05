@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ec2-user/example
+    destination: /home/ec2-user/delice-api
 hooks:
   AfterInstall:
     - location: scripts/restart_server.sh
