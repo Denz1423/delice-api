@@ -1,55 +1,67 @@
-name: Deploy to EC2
+name: CI/CD: Deploy .NET App to EC2 via S3 + CodeDeploy
 
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.315
-
-      - name: Publish
-        run: dotnet publish -c Release -o ./publish
-
-  deploy:
-    needs: build
+  build_and_deploy:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
+
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.315
+
+      - name: Publish .NET App
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Add appspec.yml and scripts to publish folder
+        run: |
+          cp appspec.yml ./publish/
+          mkdir -p ./publish/scripts
+          cp scripts/restart_server.sh ./publish/scripts/
+
+      - name: Zip contents of publish folder
+        run: |
+          cd publish
+          zip -r ../deployment.zip .  # Note: only zip contents, not the folder
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-session-name: GitHub-Action-Role
+          role-session-name: github-actions-session
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Trigger CodeDeploy
+      - name: Upload ZIP to S3
+        run: |
+          aws s3 cp deployment.zip s3://${{ secrets.S3_BUCKET }}/deployment-${{ github.sha }}.zip
+
+      - name: Trigger CodeDeploy deployment
         env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
           CODEDEPLOY_APP: ${{ secrets.CODEDEPLOY_APP }}
           CODEDEPLOY_GROUP: ${{ secrets.CODEDEPLOY_GROUP }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_KEY: deployment-${{ github.sha }}.zip
         run: |
-          echo "Triggering AWS CodeDeploy"
-          commit_hash=$(git rev-parse HEAD)
+          E_TAG=$(aws s3api head-object \
+            --bucket "$S3_BUCKET" \
+            --key "$S3_KEY" \
+            --query ETag \
+            --output text)
+
           aws deploy create-deployment \
             --application-name "$CODEDEPLOY_APP" \
             --deployment-group-name "$CODEDEPLOY_GROUP" \
-            --github-location repository=${GITHUB_REPOSITORY},commitId=$commit_hash \
+            --s3-location bucket="$S3_BUCKET",key="$S3_KEY",bundleType=zip,eTag=$E_TAG \
             --file-exists-behavior OVERWRITE \
             --region "$AWS_REGION"

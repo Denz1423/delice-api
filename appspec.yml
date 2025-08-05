@@ -2,9 +2,9 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ec2-user/delice-api
+    destination: /home/ec2-user/example
 hooks:
   AfterInstall:
     - location: scripts/restart_server.sh
-      timeout: 60
+      timeout: 300
       runas: ec2-user
