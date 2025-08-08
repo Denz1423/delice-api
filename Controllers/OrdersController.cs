@@ -146,7 +146,7 @@ namespace delice_api.Controllers
                 },
                 {
                     "PaymentStatus",
-                    new AttributeValue { S = PaymentStatus.Pending.ToString() }
+                    new AttributeValue { S = PaymentStatus.Success.ToString() }
                 },
                 {
                     "OrderDate",
