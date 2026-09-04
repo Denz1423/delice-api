@@ -1,60 +1,55 @@
 using System.Text.Json.Serialization;
 using Amazon.DynamoDBv2;
+using delice_api.Repositories;
 using delice_api.Services;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Enables running as an AWS Lambda function (no-op when running locally)
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
-builder
-    .Services.AddControllers()
+// Stripe: configure API key once at startup (not per-request)
+StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
+
+builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
-;
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add DynamoDB client as a singleton service
-builder.Services.AddSingleton<IAmazonDynamoDB>(sp =>
-{
-    return new AmazonDynamoDBClient(Amazon.RegionEndpoint.APSoutheast2);
-});
+// DynamoDB: singleton client per AWS best practices (reuse across threads)
+builder.Services.AddSingleton<IAmazonDynamoDB>(_ =>
+    new AmazonDynamoDBClient(Amazon.RegionEndpoint.APSoutheast2));
 
-builder.Services.AddScoped<DynamoDB>();
-builder.Services.AddCors();
-
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<PaymentService>();
+
+builder.Services.AddCors();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// app.UseCors(opt =>
-// {
-//     opt.AllowAnyHeader()
-//         .AllowAnyMethod()
-//         .AllowCredentials()
-//         .WithOrigins("https://*.davisdjaja.com", "http://*.davisdjaja.com")
-//         .SetIsOriginAllowedToAllowWildcardSubdomains();
-// });
-
 app.UseCors(opt =>
-{
-    opt.AllowAnyMethod()
-        .AllowAnyHeader()
-        .SetIsOriginAllowed(origin => true) // allow any origin
-        .AllowCredentials();
-});
+    opt.AllowAnyHeader()
+       .AllowAnyMethod()
+       .AllowCredentials()
+       .WithOrigins(
+           "https://delice.davisdjaja.com",
+           "http://localhost:5173"
+       )
+       .SetIsOriginAllowedToAllowWildcardSubdomains());
 
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

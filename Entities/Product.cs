@@ -1,11 +1,10 @@
-namespace delice_api.Entities
+namespace delice_api.Entities;
+
+public class Product
 {
-    public class Product
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public double Price { get; set; }
-        public string ImageUrl { get; set; }
-        public string Type { get; set; }
-    }
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public double Price { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
 }

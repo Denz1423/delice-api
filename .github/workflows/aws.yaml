@@ -1,4 +1,4 @@
-name: CI/CD using S3 CodeDeploy
+name: CI/CD to AWS Lambda
 
 on:
   push:
@@ -18,21 +18,10 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.315
+          dotnet-version: 10.0.x
 
-      - name: Publish .NET App
-        run: dotnet publish -c Release -o ./publish
-
-      - name: Add appspec.yml and scripts to publish folder
-        run: |
-          cp appspec.yml ./publish/
-          mkdir -p ./publish/scripts
-          cp scripts/restart_server.sh ./publish/scripts/
-
-      - name: Zip contents of publish folder
-        run: |
-          cd publish
-          zip -r ../deployment.zip .
+      - name: Restore local tools
+        run: dotnet tool restore
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -41,27 +30,5 @@ jobs:
           role-session-name: github-actions-session
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload ZIP to S3
-        run: |
-          aws s3 cp deployment.zip s3://${{ secrets.S3_BUCKET }}/deployment-${{ github.sha }}.zip
-
-      - name: Trigger CodeDeploy deployment
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          CODEDEPLOY_APP: ${{ secrets.CODEDEPLOY_APP }}
-          CODEDEPLOY_GROUP: ${{ secrets.CODEDEPLOY_GROUP }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_KEY: deployment-${{ github.sha }}.zip
-        run: |
-          E_TAG=$(aws s3api head-object \
-            --bucket "$S3_BUCKET" \
-            --key "$S3_KEY" \
-            --query ETag \
-            --output text)
-
-          aws deploy create-deployment \
-            --application-name "$CODEDEPLOY_APP" \
-            --deployment-group-name "$CODEDEPLOY_GROUP" \
-            --s3-location bucket="$S3_BUCKET",key="$S3_KEY",bundleType=zip,eTag=$E_TAG \
-            --file-exists-behavior OVERWRITE \
-            --region "$AWS_REGION"
+      - name: Deploy to Lambda
+        run: dotnet dotnet-lambda deploy-function delice-api
