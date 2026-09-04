@@ -1,41 +1,28 @@
 using delice_api.Entities;
 using Stripe;
 
-namespace delice_api.Services
+namespace delice_api.Services;
+
+public class PaymentService
 {
-    public class PaymentService
+    // StripeConfiguration.ApiKey is set once at startup in Program.cs
+    private readonly PaymentIntentService _intentService = new();
+
+    public async Task<PaymentIntent?> CreateOrUpdatePaymentIntentAsync(Cart cart)
     {
-        private readonly IConfiguration _config;
+        var amount = (long)(cart.Products.Sum(p => p.Price * p.Quantity) * 100);
 
-        public PaymentService(IConfiguration config)
+        if (string.IsNullOrEmpty(cart.PaymentIntentId))
         {
-            _config = config;
+            var options = new PaymentIntentCreateOptions
+            {
+                Amount = amount,
+                Currency = "nzd"
+            };
+            return await _intentService.CreateAsync(options);
         }
 
-        public async Task<PaymentIntent> CreateOrUpdatePaymentIntent(Cart cart)
-        {
-            StripeConfiguration.ApiKey = _config["StripeSettings:SecretKey"];
-
-            var paymentIntentService = new PaymentIntentService();
-
-            var paymentIntent = new PaymentIntent();
-            var subtotal = cart.Products.Sum(item => item.Price * item.Quantity) * 100;
-
-            if (string.IsNullOrEmpty(cart.PaymentIntentId))
-            {
-                var options = new PaymentIntentCreateOptions
-                {
-                    Amount = (long)subtotal,
-                    Currency = "nzd",
-                };
-                paymentIntent = await paymentIntentService.CreateAsync(options);
-            }
-            else
-            {
-                var options = new PaymentIntentUpdateOptions { Amount = (long)subtotal, };
-                await paymentIntentService.UpdateAsync(cart.PaymentIntentId, options);
-            }
-            return paymentIntent;
-        }
+        var updateOptions = new PaymentIntentUpdateOptions { Amount = amount };
+        return await _intentService.UpdateAsync(cart.PaymentIntentId, updateOptions);
     }
 }

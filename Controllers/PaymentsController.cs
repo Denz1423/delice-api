@@ -3,50 +3,47 @@ using delice_api.Entities;
 using delice_api.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace delice_api.Controllers
+namespace delice_api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class PaymentController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class PaymentController : ControllerBase
+    private readonly PaymentService _paymentService;
+
+    public PaymentController(PaymentService paymentService)
     {
-        private readonly PaymentService _paymentService;
+        _paymentService = paymentService;
+    }
 
-        public PaymentController(PaymentService paymentService)
+    [HttpPost]
+    public async Task<ActionResult<CartDto>> CreateOrUpdatePaymentIntent(Cart cart)
+    {
+        if (cart is null)
+            return NoContent();
+
+        var intent = await _paymentService.CreateOrUpdatePaymentIntentAsync(cart);
+
+        if (intent is null)
+            return BadRequest(new ProblemDetails { Title = "Problem creating payment intent" });
+
+        cart.PaymentIntentId ??= intent.Id;
+        cart.ClientSecret ??= intent.ClientSecret;
+
+        return new CartDto
         {
-            _paymentService = paymentService;
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<CartDto>> CreateOrUpdatePaymentIntent(Cart cart)
-        {
-            if (cart == null)
-                return NoContent();
-
-            var intent = await _paymentService.CreateOrUpdatePaymentIntent(cart);
-
-            if (intent == null)
-                return BadRequest(new ProblemDetails { Title = "Problem creating payment intent" });
-
-            cart.PaymentIntentId ??= intent.Id;
-            cart.ClientSecret ??= intent.ClientSecret;
-
-            return new CartDto
+            TableNumber = cart.TableNumber,
+            PaymentIntentId = cart.PaymentIntentId,
+            ClientSecret = cart.ClientSecret,
+            Products = cart.Products.Select(p => new CartProductDto
             {
-                TableNumber = cart.TableNumber,
-                PaymentIntentId = cart.PaymentIntentId,
-                ClientSecret = cart.ClientSecret,
-                Products = cart
-                    .Products.Select(product => new CartProductDto
-                    {
-                        Id = product.Id,
-                        Name = product.Name,
-                        Price = product.Price,
-                        ImageUrl = product.ImageUrl,
-                        Type = product.Type,
-                        Quantity = product.Quantity
-                    })
-                    .ToList()
-            };
-        }
+                Id = p.Id,
+                Name = p.Name,
+                Price = p.Price,
+                ImageUrl = p.ImageUrl,
+                Type = p.Type,
+                Quantity = p.Quantity
+            }).ToList()
+        };
     }
 }
