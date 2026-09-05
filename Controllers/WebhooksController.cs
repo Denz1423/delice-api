@@ -24,6 +24,7 @@ public class WebhooksController : ControllerBase
     }
 
     [HttpPost("stripe")]
+    [DisableRequestSizeLimit]
     public async Task<IActionResult> HandleStripeEvent()
     {
         var json = await new StreamReader(Request.Body).ReadToEndAsync();
@@ -35,12 +36,13 @@ public class WebhooksController : ControllerBase
             stripeEvent = EventUtility.ConstructEvent(
                 json,
                 Request.Headers["Stripe-Signature"],
-                webhookSecret
+                webhookSecret,
+                throwOnApiVersionMismatch: false
             );
         }
-        catch (StripeException ex)
+        catch (Exception ex)
         {
-            _logger.LogWarning("Stripe webhook signature verification failed: {Message}", ex.Message);
+            _logger.LogWarning("Stripe webhook processing failed: {Message}", ex.Message);
             return BadRequest();
         }
 
@@ -65,8 +67,6 @@ public class WebhooksController : ControllerBase
         _logger.LogInformation("PaymentIntent succeeded: {Id}", intent.Id);
 
         // Find order by PaymentIntentId and mark it paid.
-        // Note: this currently requires a scan because there is no GSI on PaymentIntentId.
-        // Consider adding a GSI on PaymentIntentId to avoid the full table scan.
         var orders = await _orderRepository.GetAllAsync();
         var order = orders.FirstOrDefault(o => o.PaymentIntentId == intent.Id);
 
