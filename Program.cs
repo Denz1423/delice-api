@@ -6,7 +6,6 @@ using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Enables running as an AWS Lambda function (no-op when running locally)
 builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 // Stripe: configure API key once at startup (not per-request)
